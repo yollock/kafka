@@ -1,19 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+  * Licensed to the Apache Software Foundation (ASF) under one or more
+  * contributor license agreements.  See the NOTICE file distributed with
+  * this work for additional information regarding copyright ownership.
+  * The ASF licenses this file to You under the Apache License, Version 2.0
+  * (the "License"); you may not use this file except in compliance with
+  * the License.  You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 
 package kafka.admin
 
@@ -45,65 +45,65 @@ object AdminUtils extends Logging {
   val EntityConfigChangeZnodePrefix = "config_change_"
 
   /**
-   * There are 3 goals of replica assignment:
-   *
-   * 1. Spread the replicas evenly among brokers.
-   * 2. For partitions assigned to a particular broker, their other replicas are spread over the other brokers.
-   * 3. If all brokers have rack information, assign the replicas for each partition to different racks if possible
-   *
-   * To achieve this goal for replica assignment without considering racks, we:
-   * 1. Assign the first replica of each partition by round-robin, starting from a random position in the broker list.
-   * 2. Assign the remaining replicas of each partition with an increasing shift.
-   *
-   * Here is an example of assigning
-   * broker-0  broker-1  broker-2  broker-3  broker-4
-   * p0        p1        p2        p3        p4       (1st replica)
-   * p5        p6        p7        p8        p9       (1st replica)
-   * p4        p0        p1        p2        p3       (2nd replica)
-   * p8        p9        p5        p6        p7       (2nd replica)
-   * p3        p4        p0        p1        p2       (3nd replica)
-   * p7        p8        p9        p5        p6       (3nd replica)
-   *
-   * To create rack aware assignment, this API will first create a rack alternated broker list. For example,
-   * from this brokerID -> rack mapping:
-   *
-   * 0 -> "rack1", 1 -> "rack3", 2 -> "rack3", 3 -> "rack2", 4 -> "rack2", 5 -> "rack1"
-   *
-   * The rack alternated list will be:
-   *
-   * 0, 3, 1, 5, 4, 2
-   *
-   * Then an easy round-robin assignment can be applied. Assume 6 partitions with replication factor of 3, the assignment
-   * will be:
-   *
-   * 0 -> 0,3,1
-   * 1 -> 3,1,5
-   * 2 -> 1,5,4
-   * 3 -> 5,4,2
-   * 4 -> 4,2,0
-   * 5 -> 2,0,3
-   *
-   * Once it has completed the first round-robin, if there are more partitions to assign, the algorithm will start
-   * shifting the followers. This is to ensure we will not always get the same set of sequences.
-   * In this case, if there is another partition to assign (partition #6), the assignment will be:
-   *
-   * 6 -> 0,4,2 (instead of repeating 0,3,1 as partition 0)
-   *
-   * The rack aware assignment always chooses the 1st replica of the partition using round robin on the rack alternated
-   * broker list. For rest of the replicas, it will be biased towards brokers on racks that do not have
-   * any replica assignment, until every rack has a replica. Then the assignment will go back to round-robin on
-   * the broker list.
-   *
-   * As the result, if the number of replicas is equal to or greater than the number of racks, it will ensure that
-   * each rack will get at least one replica. Otherwise, each rack will get at most one replica. In a perfect
-   * situation where the number of replicas is the same as the number of racks and each rack has the same number of
-   * brokers, it guarantees that the replica distribution is even across brokers and racks.
-   *
-   * @return a Map from partition id to replica ids
-   * @throws AdminOperationException If rack information is supplied but it is incomplete, or if it is not possible to
-   *                                 assign each replica to a unique rack.
-   *
-   */
+    * There are 3 goals of replica assignment:
+    *
+    * 1. Spread the replicas evenly among brokers.
+    * 2. For partitions assigned to a particular broker, their other replicas are spread over the other brokers.
+    * 3. If all brokers have rack information, assign the replicas for each partition to different racks if possible
+    *
+    * To achieve this goal for replica assignment without considering racks, we:
+    * 1. Assign the first replica of each partition by round-robin, starting from a random position in the broker list.
+    * 2. Assign the remaining replicas of each partition with an increasing shift.
+    *
+    * Here is an example of assigning
+    * broker-0  broker-1  broker-2  broker-3  broker-4
+    * p0        p1        p2        p3        p4       (1st replica)
+    * p5        p6        p7        p8        p9       (1st replica)
+    * p4        p0        p1        p2        p3       (2nd replica)
+    * p8        p9        p5        p6        p7       (2nd replica)
+    * p3        p4        p0        p1        p2       (3nd replica)
+    * p7        p8        p9        p5        p6       (3nd replica)
+    *
+    * To create rack aware assignment, this API will first create a rack alternated broker list. For example,
+    * from this brokerID -> rack mapping:
+    *
+    * 0 -> "rack1", 1 -> "rack3", 2 -> "rack3", 3 -> "rack2", 4 -> "rack2", 5 -> "rack1"
+    *
+    * The rack alternated list will be:
+    *
+    * 0, 3, 1, 5, 4, 2
+    *
+    * Then an easy round-robin assignment can be applied. Assume 6 partitions with replication factor of 3, the assignment
+    * will be:
+    *
+    * 0 -> 0,3,1
+    * 1 -> 3,1,5
+    * 2 -> 1,5,4
+    * 3 -> 5,4,2
+    * 4 -> 4,2,0
+    * 5 -> 2,0,3
+    *
+    * Once it has completed the first round-robin, if there are more partitions to assign, the algorithm will start
+    * shifting the followers. This is to ensure we will not always get the same set of sequences.
+    * In this case, if there is another partition to assign (partition #6), the assignment will be:
+    *
+    * 6 -> 0,4,2 (instead of repeating 0,3,1 as partition 0)
+    *
+    * The rack aware assignment always chooses the 1st replica of the partition using round robin on the rack alternated
+    * broker list. For rest of the replicas, it will be biased towards brokers on racks that do not have
+    * any replica assignment, until every rack has a replica. Then the assignment will go back to round-robin on
+    * the broker list.
+    *
+    * As the result, if the number of replicas is equal to or greater than the number of racks, it will ensure that
+    * each rack will get at least one replica. Otherwise, each rack will get at most one replica. In a perfect
+    * situation where the number of replicas is the same as the number of racks and each rack has the same number of
+    * brokers, it guarantees that the replica distribution is even across brokers and racks.
+    *
+    * @return a Map from partition id to replica ids
+    * @throws AdminOperationException If rack information is supplied but it is incomplete, or if it is not possible to
+    *                                 assign each replica to a unique rack.
+    *
+    */
   def assignReplicasToBrokers(brokerMetadatas: Seq[BrokerMetadata],
                               nPartitions: Int,
                               replicationFactor: Int,
@@ -183,7 +183,7 @@ object AdminUtils extends Logging {
           //    that do not have any replica, or
           // 2. the broker has already assigned a replica AND there is one or more brokers that do not have replica assigned
           if ((!racksWithReplicas.contains(rack) || racksWithReplicas.size == numRacks)
-              && (!brokersWithReplicas.contains(broker) || brokersWithReplicas.size == numBrokers)) {
+            && (!brokersWithReplicas.contains(broker) || brokersWithReplicas.size == numBrokers)) {
             replicaBuffer += broker
             racksWithReplicas += rack
             brokersWithReplicas += broker
@@ -234,15 +234,16 @@ object AdminUtils extends Logging {
       .groupBy { case (rack, _) => rack }
       .map { case (rack, rackAndIdList) => (rack, rackAndIdList.map { case (_, id) => id }.sorted) }
   }
- /**
-  * Add partitions to existing topic with optional replica assignment
-  *
-  * @param zkUtils Zookeeper utilities
-  * @param topic Topic for adding partitions to
-  * @param numPartitions Number of partitions to be set
-  * @param replicaAssignmentStr Manual replica assignment
-  * @param checkBrokerAvailable Ignore checking if assigned replica broker is available. Only used for testing
-  */
+
+  /**
+    * Add partitions to existing topic with optional replica assignment
+    *
+    * @param zkUtils              Zookeeper utilities
+    * @param topic                Topic for adding partitions to
+    * @param numPartitions        Number of partitions to be set
+    * @param replicaAssignmentStr Manual replica assignment
+    * @param checkBrokerAvailable Ignore checking if assigned replica broker is available. Only used for testing
+    */
   def addPartitions(zkUtils: ZkUtils,
                     topic: String,
                     numPartitions: Int = 1,
@@ -323,12 +324,12 @@ object AdminUtils extends Logging {
   }
 
   /**
-   * Delete the whole directory of the given consumer group if the group is inactive.
-   *
-   * @param zkUtils Zookeeper utilities
-   * @param group Consumer group
-   * @return whether or not we deleted the consumer group information
-   */
+    * Delete the whole directory of the given consumer group if the group is inactive.
+    *
+    * @param zkUtils Zookeeper utilities
+    * @param group   Consumer group
+    * @return whether or not we deleted the consumer group information
+    */
   def deleteConsumerGroupInZK(zkUtils: ZkUtils, group: String) = {
     if (!isConsumerGroupActive(zkUtils, group)) {
       val dir = new ZKGroupDirs(group)
@@ -339,14 +340,14 @@ object AdminUtils extends Logging {
   }
 
   /**
-   * Delete the given consumer group's information for the given topic in Zookeeper if the group is inactive.
-   * If the consumer group consumes no other topics, delete the whole consumer group directory.
-   *
-   * @param zkUtils Zookeeper utilities
-   * @param group Consumer group
-   * @param topic Topic of the consumer group information we wish to delete
-   * @return whether or not we deleted the consumer group information for the given topic
-   */
+    * Delete the given consumer group's information for the given topic in Zookeeper if the group is inactive.
+    * If the consumer group consumes no other topics, delete the whole consumer group directory.
+    *
+    * @param zkUtils Zookeeper utilities
+    * @param group   Consumer group
+    * @param topic   Topic of the consumer group information we wish to delete
+    * @return whether or not we deleted the consumer group information for the given topic
+    */
   def deleteConsumerGroupInfoForTopicInZK(zkUtils: ZkUtils, group: String, topic: String) = {
     val topics = zkUtils.getTopicsByConsumerGroup(group)
     if (topics == Seq(topic)) {
@@ -362,11 +363,11 @@ object AdminUtils extends Logging {
   }
 
   /**
-   * Delete every inactive consumer group's information about the given topic in Zookeeper.
-   *
-   * @param zkUtils Zookeeper utilities
-   * @param topic Topic of the consumer group information we wish to delete
-   */
+    * Delete every inactive consumer group's information about the given topic in Zookeeper.
+    *
+    * @param zkUtils Zookeeper utilities
+    * @param topic   Topic of the consumer group information we wish to delete
+    */
   def deleteAllConsumerGroupInfoForTopicInZK(zkUtils: ZkUtils, topic: String) {
     val groups = zkUtils.getAllConsumerGroupsForTopic(topic)
     groups.foreach(group => deleteConsumerGroupInfoForTopicInZK(zkUtils, group, topic))
@@ -376,7 +377,7 @@ object AdminUtils extends Logging {
     zkUtils.zkClient.exists(getTopicPath(topic))
 
   def getBrokerMetadatas(zkUtils: ZkUtils, rackAwareMode: RackAwareMode = RackAwareMode.Enforced,
-                        brokerList: Option[Seq[Int]] = None): Seq[BrokerMetadata] = {
+                         brokerList: Option[Seq[Int]] = None): Seq[BrokerMetadata] = {
     val allBrokers = zkUtils.getAllBrokersInCluster()
     val brokers = brokerList.map(brokerIds => allBrokers.filter(b => brokerIds.contains(b.id))).getOrElse(allBrokers)
     val brokersWithRack = brokers.filter(_.rack.nonEmpty)
@@ -427,7 +428,7 @@ object AdminUtils extends Logging {
       }
     }
 
-    partitionReplicaAssignment.values.foreach(reps => require(reps.size == reps.toSet.size, "Duplicate replica assignment found: "  + partitionReplicaAssignment))
+    partitionReplicaAssignment.values.foreach(reps => require(reps.size == reps.toSet.size, "Duplicate replica assignment found: " + partitionReplicaAssignment))
 
     // Configs only matter if a topic is being created. Changing configs via AlterTopic is not supported
     if (!update) {
@@ -460,29 +461,29 @@ object AdminUtils extends Logging {
   }
 
   /**
-   * Update the config for a client and create a change notification so the change will propagate to other brokers
-   *
-   * @param zkUtils Zookeeper utilities used to write the config to ZK
-   * @param clientId: The clientId for which configs are being changed
-   * @param configs: The final set of configs that will be applied to the topic. If any new configs need to be added or
-   *                 existing configs need to be deleted, it should be done prior to invoking this API
-   *
-   */
+    * Update the config for a client and create a change notification so the change will propagate to other brokers
+    *
+    * @param zkUtils  Zookeeper utilities used to write the config to ZK
+    * @param clientId : The clientId for which configs are being changed
+    * @param configs  : The final set of configs that will be applied to the topic. If any new configs need to be added or
+    *                 existing configs need to be deleted, it should be done prior to invoking this API
+    *
+    */
   def changeClientIdConfig(zkUtils: ZkUtils, clientId: String, configs: Properties) {
     changeEntityConfig(zkUtils, ConfigType.Client, clientId, configs)
   }
 
   /**
-   * Update the config for an existing topic and create a change notification so the change will propagate to other brokers
-   *
-   * @param zkUtils Zookeeper utilities used to write the config to ZK
-   * @param topic: The topic for which configs are being changed
-   * @param configs: The final set of configs that will be applied to the topic. If any new configs need to be added or
-   *                 existing configs need to be deleted, it should be done prior to invoking this API
-   *
-   */
+    * Update the config for an existing topic and create a change notification so the change will propagate to other brokers
+    *
+    * @param zkUtils Zookeeper utilities used to write the config to ZK
+    * @param topic   : The topic for which configs are being changed
+    * @param configs : The final set of configs that will be applied to the topic. If any new configs need to be added or
+    *                existing configs need to be deleted, it should be done prior to invoking this API
+    *
+    */
   def changeTopicConfig(zkUtils: ZkUtils, topic: String, configs: Properties) {
-    if(!topicExists(zkUtils, topic))
+    if (!topicExists(zkUtils, topic))
       throw new AdminOperationException("Topic \"%s\" does not exist.".format(topic))
     // remove the topic overrides
     LogConfig.validate(configs)
@@ -499,13 +500,13 @@ object AdminUtils extends Logging {
     zkUtils.zkClient.createPersistentSequential(seqNode, content)
   }
 
-  def getConfigChangeZnodeData(entityType: String, entityName: String) : Map[String, Any] = {
+  def getConfigChangeZnodeData(entityType: String, entityName: String): Map[String, Any] = {
     Map("version" -> 1, "entity_type" -> entityType, "entity_name" -> entityName)
   }
 
   /**
-   * Write out the topic config to zk, if there is any
-   */
+    * Write out the topic config to zk, if there is any
+    */
   private def writeEntityConfig(zkUtils: ZkUtils, entityType: String, entityName: String, config: Properties) {
     val configMap: mutable.Map[String, String] = {
       import JavaConversions._
@@ -516,12 +517,12 @@ object AdminUtils extends Logging {
   }
 
   /**
-   * Read the entity (topic or client) config (if any) from zk
-   */
+    * Read the entity (topic or client) config (if any) from zk
+    */
   def fetchEntityConfig(zkUtils: ZkUtils, entityType: String, entity: String): Properties = {
     val str: String = zkUtils.zkClient.readData(getEntityConfigPath(entityType, entity), true)
     val props = new Properties()
-    if(str != null) {
+    if (str != null) {
       Json.parseFull(str) match {
         case None => // there are no config overrides
         case Some(mapAnon: Map[_, _]) =>
@@ -529,7 +530,7 @@ object AdminUtils extends Logging {
           require(map("version") == 1)
           map.get("config") match {
             case Some(config: Map[_, _]) =>
-              for(configTup <- config)
+              for (configTup <- config)
                 configTup match {
                   case (k: String, v: String) =>
                     props.setProperty(k, v)
@@ -539,7 +540,7 @@ object AdminUtils extends Logging {
           }
 
         case o => throw new IllegalArgumentException("Unexpected value in config:(%s), entity_type: (%s), entity: (%s)"
-                                                             .format(str, entityType, entity))
+          .format(str, entityType, entity))
       }
     }
     props
@@ -563,7 +564,7 @@ object AdminUtils extends Logging {
                                        zkUtils: ZkUtils,
                                        cachedBrokerInfo: mutable.HashMap[Int, Broker],
                                        protocol: SecurityProtocol = SecurityProtocol.PLAINTEXT): MetadataResponse.TopicMetadata = {
-    if(zkUtils.pathExists(getTopicPath(topic))) {
+    if (zkUtils.pathExists(getTopicPath(topic))) {
       val topicPartitionAssignment = zkUtils.getPartitionAssignmentForTopics(List(topic)).get(topic).get
       val sortedPartitions = topicPartitionAssignment.toList.sortWith((m1, m2) => m1._1 < m2._1)
       val partitionMetadata = sortedPartitions.map { partitionMap =>
@@ -592,10 +593,10 @@ object AdminUtils extends Logging {
           } catch {
             case e: Throwable => throw new ReplicaNotAvailableException(e)
           }
-          if(replicaInfo.size < replicas.size)
+          if (replicaInfo.size < replicas.size)
             throw new ReplicaNotAvailableException("Replica information not available for following brokers: " +
               replicas.filterNot(replicaInfo.map(_.id).contains(_)).mkString(","))
-          if(isrInfo.size < inSyncReplicas.size)
+          if (isrInfo.size < inSyncReplicas.size)
             throw new ReplicaNotAvailableException("In Sync Replica information not available for following brokers: " +
               inSyncReplicas.filterNot(isrInfo.map(_.id).contains(_)).mkString(","))
           new MetadataResponse.PartitionMetadata(Errors.NONE, partition, leaderInfo, replicaInfo.asJava, isrInfo.asJava)
