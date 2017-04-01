@@ -64,8 +64,7 @@ class KafkaServerStartable(val serverConfig: KafkaConfig) extends Logging {
     server.brokerState.newState(newState)
   }
 
-  def awaitShutdown() =
-    server.awaitShutdown
+  def awaitShutdown() = server.awaitShutdown
 
 }
 

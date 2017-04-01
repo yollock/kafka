@@ -1,19 +1,19 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+  * Licensed to the Apache Software Foundation (ASF) under one or more
+  * contributor license agreements.  See the NOTICE file distributed with
+  * this work for additional information regarding copyright ownership.
+  * The ASF licenses this file to You under the Apache License, Version 2.0
+  * (the "License"); you may not use this file except in compliance with
+  * the License.  You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 package kafka.coordinator
 
 import java.util.Properties
@@ -31,8 +31,7 @@ import org.apache.kafka.common.requests.{OffsetFetchResponse, JoinGroupRequest}
 
 import scala.collection.{Map, Seq, immutable}
 
-case class GroupConfig(groupMinSessionTimeoutMs: Int,
-                       groupMaxSessionTimeoutMs: Int)
+case class GroupConfig(groupMinSessionTimeoutMs: Int, groupMaxSessionTimeoutMs: Int)
 
 case class JoinGroupResult(members: Map[String, Array[Byte]],
                            memberId: String,
@@ -42,11 +41,11 @@ case class JoinGroupResult(members: Map[String, Array[Byte]],
                            errorCode: Short)
 
 /**
- * GroupCoordinator handles general group membership and offset management.
- *
- * Each Kafka server instantiates a coordinator which is responsible for a set of
- * groups. Groups are assigned to coordinators based on their group names.
- */
+  * GroupCoordinator handles general group membership and offset management.
+  *
+  * Each Kafka server instantiates a coordinator which is responsible for a set of
+  * groups. Groups are assigned to coordinators based on their group names.
+  */
 class GroupCoordinator(val brokerId: Int,
                        val groupConfig: GroupConfig,
                        val offsetConfig: OffsetConfig,
@@ -70,13 +69,13 @@ class GroupCoordinator(val brokerId: Int,
   }
 
   /**
-   * NOTE: If a group lock and metadataLock are simultaneously needed,
-   * be sure to acquire the group lock before metadataLock to prevent deadlock
-   */
+    * NOTE: If a group lock and metadataLock are simultaneously needed,
+    * be sure to acquire the group lock before metadataLock to prevent deadlock
+    */
 
   /**
-   * Startup logic executed at the same time when the server starts up.
-   */
+    * Startup logic executed at the same time when the server starts up.
+    */
   def startup() {
     info("Starting up.")
     isActive.set(true)
@@ -84,9 +83,9 @@ class GroupCoordinator(val brokerId: Int,
   }
 
   /**
-   * Shutdown logic executed at the same time when server shuts down.
-   * Ordering of actions should be reversed from the startup process.
-   */
+    * Shutdown logic executed at the same time when server shuts down.
+    * Ordering of actions should be reversed from the startup process.
+    */
   def shutdown() {
     info("Shutting down.")
     isActive.set(false)
@@ -113,7 +112,7 @@ class GroupCoordinator(val brokerId: Int,
     } else if (isCoordinatorLoadingInProgress(groupId)) {
       responseCallback(joinError(memberId, Errors.GROUP_LOAD_IN_PROGRESS.code))
     } else if (sessionTimeoutMs < groupConfig.groupMinSessionTimeoutMs ||
-               sessionTimeoutMs > groupConfig.groupMaxSessionTimeoutMs) {
+      sessionTimeoutMs > groupConfig.groupMaxSessionTimeoutMs) {
       responseCallback(joinError(memberId, Errors.INVALID_SESSION_TIMEOUT.code))
     } else {
       // only try to create the group if the group is not unknown AND
@@ -393,12 +392,12 @@ class GroupCoordinator(val brokerId: Int,
       val group = groupManager.getGroup(groupId)
       if (group == null) {
         if (generationId < 0)
-          // the group is not relying on Kafka for partition management, so allow the commit
+        // the group is not relying on Kafka for partition management, so allow the commit
           delayedOffsetStore = Some(groupManager.prepareStoreOffsets(groupId, memberId, generationId, offsetMetadata,
             responseCallback))
         else
-          // the group has failed over to this coordinator (which will be handled in KAFKA-2017),
-          // or this is a request coming from an older generation. either way, reject the commit
+        // the group has failed over to this coordinator (which will be handled in KAFKA-2017),
+        // or this is a request coming from an older generation. either way, reject the commit
           responseCallback(offsetMetadata.mapValues(_ => Errors.ILLEGAL_GENERATION.code))
       } else {
         group synchronized {
@@ -428,13 +427,16 @@ class GroupCoordinator(val brokerId: Int,
                          partitions: Seq[TopicPartition]): Map[TopicPartition, OffsetFetchResponse.PartitionData] = {
     if (!isActive.get) {
       partitions.map { case topicPartition =>
-        (topicPartition, new OffsetFetchResponse.PartitionData(OffsetFetchResponse.INVALID_OFFSET, "", Errors.GROUP_COORDINATOR_NOT_AVAILABLE.code))}.toMap
+        (topicPartition, new OffsetFetchResponse.PartitionData(OffsetFetchResponse.INVALID_OFFSET, "", Errors.GROUP_COORDINATOR_NOT_AVAILABLE.code))
+      }.toMap
     } else if (!isCoordinatorForGroup(groupId)) {
       partitions.map { case topicPartition =>
-        (topicPartition, new OffsetFetchResponse.PartitionData(OffsetFetchResponse.INVALID_OFFSET, "", Errors.NOT_COORDINATOR_FOR_GROUP.code))}.toMap
+        (topicPartition, new OffsetFetchResponse.PartitionData(OffsetFetchResponse.INVALID_OFFSET, "", Errors.NOT_COORDINATOR_FOR_GROUP.code))
+      }.toMap
     } else if (isCoordinatorLoadingInProgress(groupId)) {
       partitions.map { case topicPartition =>
-        (topicPartition, new OffsetFetchResponse.PartitionData(OffsetFetchResponse.INVALID_OFFSET, "", Errors.GROUP_LOAD_IN_PROGRESS.code))}.toMap
+        (topicPartition, new OffsetFetchResponse.PartitionData(OffsetFetchResponse.INVALID_OFFSET, "", Errors.GROUP_LOAD_IN_PROGRESS.code))
+      }.toMap
     } else {
       // return offsets blindly regardless the current group state since the group may be using
       // Kafka commit storage without automatic group management
@@ -548,17 +550,17 @@ class GroupCoordinator(val brokerId: Int,
 
   private def joinError(memberId: String, errorCode: Short): JoinGroupResult = {
     JoinGroupResult(
-      members=Map.empty,
-      memberId=memberId,
-      generationId=0,
-      subProtocol=GroupCoordinator.NoProtocol,
-      leaderId=GroupCoordinator.NoLeader,
-      errorCode=errorCode)
+      members = Map.empty,
+      memberId = memberId,
+      generationId = 0,
+      subProtocol = GroupCoordinator.NoProtocol,
+      leaderId = GroupCoordinator.NoLeader,
+      errorCode = errorCode)
   }
 
   /**
-   * Complete existing DelayedHeartbeats for the given member and schedule the next one
-   */
+    * Complete existing DelayedHeartbeats for the given member and schedule the next one
+    */
   private def completeAndScheduleNextHeartbeatExpiration(group: GroupMetadata, member: MemberMetadata) {
     // complete current heartbeat expectation
     member.latestHeartbeat = time.milliseconds()
@@ -668,12 +670,16 @@ class GroupCoordinator(val brokerId: Int,
         for (member <- group.allMemberMetadata) {
           assert(member.awaitingJoinCallback != null)
           val joinResult = JoinGroupResult(
-            members=if (member.memberId == group.leaderId) { group.currentMemberMetadata } else { Map.empty },
-            memberId=member.memberId,
-            generationId=group.generationId,
-            subProtocol=group.protocol,
-            leaderId=group.leaderId,
-            errorCode=Errors.NONE.code)
+            members = if (member.memberId == group.leaderId) {
+              group.currentMemberMetadata
+            } else {
+              Map.empty
+            },
+            memberId = member.memberId,
+            generationId = group.generationId,
+            subProtocol = group.protocol,
+            leaderId = group.leaderId,
+            errorCode = Errors.NONE.code)
 
           member.awaitingJoinCallback(joinResult)
           member.awaitingJoinCallback = null
